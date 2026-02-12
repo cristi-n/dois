@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DOI List Viewer</title>
+  <style>
+    :root{
+      --bg: #0b1020;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.085);
+      --border: rgba(255,255,255,.12);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --muted2: rgba(255,255,255,.52);
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --radius: 18px;
+      --radius2: 14px;
+      --focus: rgba(120, 160, 255, .35);
+      --ok: rgba(70, 220, 170, .95);
+      --warn: rgba(255, 196, 0, .95);
+      --bad: rgba(255, 86, 106, .95);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background:
+        radial-gradient(1100px 700px at 20% -10%, rgba(124,92,255,.45), transparent 60%),
+        radial-gradient(900px 600px at 85% 10%, rgba(41,194,255,.32), transparent 55%),
+        radial-gradient(1000px 700px at 60% 120%, rgba(35,235,155,.18), transparent 55%),
+        linear-gradient(180deg, #070a14, var(--bg));
+    }
+
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 36px 18px 64px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .logo{
+      width: 42px; height: 42px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(41,194,255,.92));
+      box-shadow: 0 10px 30px rgba(41,194,255,.18);
+      position: relative;
+      overflow: hidden;
+    }
+    .logo::after{
+      content:"";
+      position:absolute;
+      inset:-30%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.28), transparent 55%);
+      transform: rotate(15deg);
+    }
+
+    .title{
+      min-width: 0;
+    }
+
+    h1{
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: .2px;
+      line-height: 1.2;
+    }
+    .subtitle{
+      margin-top: 3px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 62ch;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12.5px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 25px rgba(0,0,0,.18);
+    }
+    .dot{
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--ok);
+      box-shadow: 0 0 0 6px rgba(70,220,170,.12);
+    }
+
+    .card{
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    .cardInner{
+      padding: 18px;
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .labelRow{
+      display:flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .label{
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .counter{
+      font-size: 12.5px;
+      color: var(--muted2);
+    }
+
+    textarea{
+      width: 100%;
+      min-height: 170px;
+      resize: vertical;
+      padding: 14px 14px;
+      border-radius: var(--radius2);
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline: none;
+      font-size: 13.5px;
+      line-height: 1.5;
+      letter-spacing: .1px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+
+    textarea::placeholder{
+      color: rgba(255,255,255,.38);
+    }
+
+    textarea:focus{
+      border-color: rgba(120, 160, 255, .55);
+      box-shadow:
+        0 0 0 4px var(--focus),
+        inset 0 0 0 1px rgba(255,255,255,.04);
+    }
+
+    .actions{
+      display:flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items:center;
+      justify-content: space-between;
+      margin-top: 12px;
+    }
+
+    .btns{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button{
+      border: 0;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      color: rgba(255,255,255,.93);
+      transition: transform .06s ease, filter .15s ease, background .15s ease;
+      user-select: none;
+    }
+
+    .primary{
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(41,194,255,.90));
+      box-shadow: 0 14px 30px rgba(41,194,255,.16);
+    }
+    .primary:hover{ filter: brightness(1.06); }
+    .primary:active{ transform: translateY(1px); }
+
+    .ghost{
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.14);
+      color: rgba(255,255,255,.86);
+    }
+    .ghost:hover{ background: rgba(255,255,255,.10); }
+    .ghost:active{ transform: translateY(1px); }
+
+    .hint{
+      font-size: 12.5px;
+      color: var(--muted2);
+      line-height: 1.4;
+    }
+
+    .divider{
+      height: 1px;
+      background: rgba(255,255,255,.10);
+      margin: 16px 0 0;
+    }
+
+    .resultsHeader{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 16px 0 10px;
+    }
+
+    .resultsTitle{
+      font-size: 14px;
+      font-weight: 800;
+      color: rgba(255,255,255,.90);
+      letter-spacing: .2px;
+    }
+
+    .pill{
+      font-size: 12px;
+      color: rgba(255,255,255,.78);
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .list{
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .item{
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.045);
+    }
+
+    .idx{
+      width: 26px;
+      height: 26px;
+      border-radius: 10px;
+      display:grid;
+      place-items:center;
+      font-size: 12px;
+      font-weight: 800;
+      color: rgba(255,255,255,.9);
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      flex: 0 0 auto;
+      margin-top: 1px;
+    }
+
+    .doi{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+      color: rgba(255,255,255,.92);
+      overflow-wrap: anywhere;
+      line-height: 1.35;
+    }
+
+    .msg{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.78);
+      font-size: 13px;
+      display: none;
+    }
+
+    .msg.warn{
+      border-color: rgba(255, 196, 0, .28);
+      background: rgba(255, 196, 0, .07);
+      color: rgba(255, 225, 140, .95);
+    }
+
+    .msg.bad{
+      border-color: rgba(255, 86, 106, .28);
+      background: rgba(255, 86, 106, .07);
+      color: rgba(255, 168, 176, .95);
+    }
+
+    footer{
+      margin-top: 18px;
+      color: rgba(255,255,255,.45);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">
+          <h1>DOI List Viewer</h1>
+          <div class="subtitle">Paste up to 50 DOIs, then display them below.</div>
+        </div>
+      </div>
+      <div class="chip" title="Input limit">
+        <span class="dot" aria-hidden="true"></span>
+        <span><strong>Max 50</strong> DOIs</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardInner">
+        <div class="labelRow">
+          <div class="label">DOIs (maximum 50)</div>
+          <div class="counter"><span id="count">0</span> detected</div>
+        </div>
+
+        <textarea id="input" placeholder="Example:
+10.1109/sjtv.2022.3167650
+10.1038/s41586-020-2649-2
+https://doi.org/10.1000/xyz123
+doi:10.1016/j.cell.2020.01.001"></textarea>
+
+        <div class="actions">
+          <div class="btns">
+            <button class="primary" id="displayBtn" type="button">Display</button>
+            <button class="ghost" id="clearBtn" type="button">Clear</button>
+          </div>
+          <div class="hint">Tip: Separate entries by newline, comma, or spaces.</div>
+        </div>
+
+        <div id="message" class="msg"></div>
+
+        <div class="divider"></div>
+
+        <div class="resultsHeader">
+          <div class="resultsTitle">Displayed DOIs</div>
+          <div class="pill" id="pill">0 items</div>
+        </div>
+
+        <ul class="list" id="list"></ul>
+
+        <footer>
+          This page only displays the DOIs you paste — no network calls.
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MAX_DOIS = 50;
+
+    const input = document.getElementById('input');
+    const count = document.getElementById('count');
+    const pill = document.getElementById('pill');
+    const list = document.getElementById('list');
+    const msg = document.getElementById('message');
+    const displayBtn = document.getElementById('displayBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    function normalizeDoi(raw) {
+      let d = (raw || '').trim();
+      d = d.replace(/^https?:\/\/(dx\.)?doi\.org\//i, '');
+      d = d.replace(/^doi:\s*/i, '');
+      return d.trim();
+    }
+
+    function parseDois(text) {
+      // Split on newlines, commas, semicolons, and whitespace
+      const parts = (text || '')
+        .split(/[\n\r,;]+|\s{2,}/g) // keep single spaces inside DOIs, but split on repeated whitespace
+        .flatMap(p => p.split(/\s+/)) // then split any remaining multi-DOI whitespace
+        .map(normalizeDoi)
+        .filter(Boolean);
+
+      // Deduplicate while preserving order
+      const seen = new Set();
+      const out = [];
+      for (const d of parts) {
+        const key = d.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(d);
+        }
+      }
+      return out;
+    }
+
+    function setMessage(text, kind) {
+      if (!text) {
+        msg.style.display = 'none';
+        msg.textContent = '';
+        msg.className = 'msg';
+        return;
+      }
+      msg.style.display = 'block';
+      msg.textContent = text;
+      msg.className = 'msg ' + (kind || '');
+    }
+
+    function updateDetectedCount() {
+      const dois = parseDois(input.value);
+      count.textContent = String(dois.length);
+      if (dois.length > MAX_DOIS) {
+        setMessage(`You pasted ${dois.length} DOIs. The maximum is ${MAX_DOIS}. Remove some entries, then click Display.`, 'warn');
+      } else {
+        setMessage('', '');
+      }
+    }
+
+    function render(dois) {
+      list.innerHTML = '';
+      pill.textContent = `${dois.length} item${dois.length === 1 ? '' : 's'}`;
+
+      if (dois.length === 0) {
+        setMessage('No DOIs to display yet. Paste up to 50 DOIs above and click Display.', '');
+        return;
+      }
+
+      for (let i = 0; i < dois.length; i++) {
+        const li = document.createElement('li');
+        li.className = 'item';
+
+        const idx = document.createElement('div');
+        idx.className = 'idx';
+        idx.textContent = String(i + 1);
+
+        const doi = document.createElement('div');
+        doi.className = 'doi';
+        doi.textContent = dois[i];
+
+        li.appendChild(idx);
+        li.appendChild(doi);
+        list.appendChild(li);
+      }
+      setMessage('', '');
+    }
+
+    displayBtn.addEventListener('click', () => {
+      const dois = parseDois(input.value);
+
+      if (dois.length === 0) {
+        render([]);
+        return;
+      }
+      if (dois.length > MAX_DOIS) {
+        setMessage(`Too many DOIs: ${dois.length}. The maximum is ${MAX_DOIS}.`, 'bad');
+        return;
+      }
+      render(dois);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      render([]);
+      updateDetectedCount();
+      input.focus();
+    });
+
+    input.addEventListener('input', updateDetectedCount);
+
+    // Initial state
+    render([]);
+    updateDetectedCount();
+  </script>
+</body>
+</html>
